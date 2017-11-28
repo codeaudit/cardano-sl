@@ -9,9 +9,11 @@
 module Pos.Wallet.Web.Server.Runner
        ( walletServeWebFull
        , runWRealMode
+       , walletWebModeContext
+       , convertHandler
        ) where
 
-import           Universum hiding (over)
+import           Universum
 
 import qualified Control.Concurrent.STM as STM
 import qualified Control.Monad.Catch as Catch
@@ -75,9 +77,12 @@ walletServeWebFull sendActions debug = walletServeImpl action
         atomically $ STM.putTMVar saVar sendActions
         when debug $ addInitialRichAccount 0
 
-        wwmc <- view (lensOf @WalletWebModeContextTag)
+        wwmc <- walletWebModeContext
         walletApplication $
             walletServer @WalletWebModeContext @WalletWebMode (convertHandler wwmc)
+
+walletWebModeContext :: WalletWebMode WalletWebModeContext
+walletWebModeContext = view (lensOf @WalletWebModeContextTag)
 
 convertHandler
     :: WalletWebModeContext

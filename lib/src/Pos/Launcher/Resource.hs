@@ -46,7 +46,7 @@ import           Pos.Context (ConnectedPeers (..), NodeContext (..), StartTime (
 import           Pos.Core (HasConfiguration, Timestamp, gdStartTime, genesisData)
 import           Pos.DB (MonadDBRead, NodeDBs)
 import           Pos.DB.Rocks (closeNodeDBs, openNodeDBs)
-import           Pos.Delegation (DelegationVar, mkDelegationVar)
+import           Pos.Delegation (DelegationVar, HasDlgConfiguration, mkDelegationVar)
 import           Pos.DHT.Real (KademliaDHTInstance, KademliaParams (..), startDHTInstance,
                                stopDHTInstance)
 import qualified Pos.GState as GS
@@ -55,8 +55,8 @@ import           Pos.Launcher.Param (BaseParams (..), LoggingParams (..), NodePa
 import           Pos.Lrc.Context (LrcContext (..), mkLrcSyncData)
 import           Pos.Network.Types (NetworkConfig (..), Topology (..))
 import           Pos.Shutdown.Types (ShutdownContext (..))
-import           Pos.Slotting (SlottingContextSum (..), SlottingData, mkNtpSlottingVar,
-                               mkSimpleSlottingVar)
+import           Pos.Slotting (SlottingContextSum (..), mkNtpSlottingVar, mkSimpleSlottingVar)
+import           Pos.Slotting.Types (SlottingData)
 import           Pos.Ssc (HasSscConfiguration, SscParams, SscState, createSscContext, mkSscState)
 import           Pos.StateLock (newStateLock)
 import           Pos.Txp (GenericTxpLocalData (..), TxpGlobalSettings, mkTxpLocalData,
@@ -114,6 +114,7 @@ allocateNodeResources
        , HasNodeConfiguration
        , HasInfraConfiguration
        , HasSscConfiguration
+       , HasDlgConfiguration
        )
     => Transport m
     -> NetworkConfig KademliaDHTInstance
@@ -196,6 +197,7 @@ bracketNodeResources :: forall ext m a.
       , HasNodeConfiguration
       , HasInfraConfiguration
       , HasSscConfiguration
+      , HasDlgConfiguration
       )
     => NodeParams
     -> SscParams

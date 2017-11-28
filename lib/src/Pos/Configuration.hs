@@ -18,11 +18,6 @@ module Pos.Configuration
        , propagationQueueSize
        , defaultPeers
        , recoveryHeadersMessage
-       , messageCacheTimeout
-
-       -- * Delegation
-       , lightDlgConfirmationTimeout
-       , dlgCacheParam
 
        -- * Malicious activity detection constants
        , mdNoBlocksSlotThreshold
@@ -50,7 +45,7 @@ nodeConfiguration = given
 withNodeConfiguration :: NodeConfiguration -> (HasNodeConfiguration => r) -> r
 withNodeConfiguration = give
 
--- | Compile time configuration. See example in /constants.yaml/ file.
+-- | Top-level node configuration. See example in /configuration.yaml/ file.
 data NodeConfiguration = NodeConfiguration
     {
       ccNetworkDiameter              :: !Int
@@ -59,16 +54,8 @@ data NodeConfiguration = NodeConfiguration
       -- ^ List of default peers
     , ccMdNoBlocksSlotThreshold      :: !Int
       -- ^ Threshold of slots for malicious activity detection
-    , ccLightDlgConfirmationTimeout  :: !Int
-      -- ^ Timeout for holding light psks confirmations
-    , ccDlgCacheParam                :: !Int
-      -- ^ This value parameterizes size of cache used in Delegation.
-      -- Not bytes, but number of elements.
     , ccRecoveryHeadersMessage       :: !Int
       -- ^ Numbers of headers put in message in recovery mode.
-    , ccMessageCacheTimeout          :: !Int
-      -- ^ Interval we ignore cached messages in components that
-      -- support caching
     , ccNetworkConnectionTimeout     :: !Int
       -- ^ Network connection timeout in milliseconds
     , ccConversationEstablishTimeout :: !Int
@@ -127,24 +114,6 @@ defaultPeers = map parsePeer . ccDefaultPeers $ nodeConfiguration
 -- 'blkSecurityParam'.
 recoveryHeadersMessage :: (HasNodeConfiguration, Integral a) => a
 recoveryHeadersMessage = fromIntegral . ccRecoveryHeadersMessage $ nodeConfiguration
-
--- | Timeout for caching system. Components that use caching on
--- messages can use this timeout to invalidate caches.
-messageCacheTimeout :: (HasNodeConfiguration, Integral a) => a
-messageCacheTimeout = fromIntegral . ccMessageCacheTimeout $ nodeConfiguration
-
-----------------------------------------------------------------------------
--- Delegation
-----------------------------------------------------------------------------
-
--- | Amount of time we hold confirmations for light PSKs.
-lightDlgConfirmationTimeout :: (HasNodeConfiguration, Integral a) => a
-lightDlgConfirmationTimeout = fromIntegral . ccLightDlgConfirmationTimeout $ nodeConfiguration
-
--- | This value parameterizes size of cache used in Delegation.
--- Not bytes, but number of elements.
-dlgCacheParam :: (HasNodeConfiguration, Integral n) => n
-dlgCacheParam = fromIntegral . ccDlgCacheParam $ nodeConfiguration
 
 ----------------------------------------------------------------------------
 -- Malicious activity

@@ -37,7 +37,6 @@ import           Test.QuickCheck.Monadic (PropertyM (..), monadic)
 import           Pos.AllSecrets (HasAllSecrets (..))
 import           Pos.Block.BListener (MonadBListener (..))
 import           Pos.Block.Slog (HasSlogGState (..))
-import           Pos.Block.Types (Undo)
 import           Pos.Client.KeyStorage (MonadKeys (..), MonadKeysRead (..), getSecretDefault,
                                         modifySecretPureDefault)
 import           Pos.Client.Txp.Addresses (MonadAddresses (..))
@@ -47,17 +46,15 @@ import           Pos.Client.Txp.History (MonadTxHistory (..), getBlockHistoryDef
 import           Pos.Configuration (HasNodeConfiguration)
 import           Pos.Context (ConnectedPeers (..), LastKnownHeader, LastKnownHeaderTag,
                               ProgressHeader, ProgressHeaderTag, RecoveryHeader, RecoveryHeaderTag)
-import           Pos.Core (HasConfiguration, IsHeader, Timestamp (..), largestHDAddressBoot)
-import           Pos.Core.Block (Block, BlockHeader)
+import           Pos.Core (HasConfiguration, Timestamp (..), largestHDAddressBoot)
 import           Pos.Core.Txp (TxAux)
 import           Pos.Crypto (PassPhrase)
-import           Pos.DB (MonadBlockDBGeneric (..), MonadBlockDBGenericWrite (..), MonadDB (..),
-                         MonadDBRead (..), MonadGState (..))
+import           Pos.DB (MonadDB (..), MonadDBRead (..), MonadGState (..))
 import qualified Pos.DB as DB
 import qualified Pos.DB.Block as DB
 import           Pos.DB.DB (gsAdoptedBVDataDefault)
 import           Pos.DB.Pure (DBPureVar)
-import           Pos.Delegation (DelegationVar)
+import           Pos.Delegation (DelegationVar, HasDlgConfiguration)
 import           Pos.Generator.Block (BlockGenMode)
 import qualified Pos.GState as GS
 import           Pos.KnownPeers (MonadFormatPeers (..), MonadKnownPeers (..))
@@ -69,12 +66,12 @@ import           Pos.Shutdown (HasShutdownContext (..), ShutdownContext (..))
 import           Pos.Slotting (HasSlottingVar (..), MonadSlots (..), MonadSlotsData)
 import           Pos.Ssc.Configuration (HasSscConfiguration)
 import           Pos.Ssc.Mem (SscMemTag)
-import           Pos.Ssc.Types (SscBlock, SscState)
+import           Pos.Ssc.Types (SscState)
 import           Pos.StateLock (StateLock, StateLockMetrics (..), newStateLock)
 import           Pos.Txp (GenericTxpLocalData, MempoolExt, MonadTxpLocal (..), TxpGlobalSettings,
                           TxpHolderTag, txNormalize, txProcessTransactionNoLock, txpTip)
 import           Pos.Update.Context (UpdateContext)
-import           Pos.Util (Some, postfixLFields)
+import           Pos.Util (postfixLFields)
 import           Pos.Util.CompileInfo (HasCompileInfo)
 import           Pos.Util.JsonLog (HasJsonLogConfig (..), JsonLogConfig (..), jsonLogDefault)
 import           Pos.Util.LoggerName (HasLoggerName' (..), getLoggerNameDefault,
@@ -167,8 +164,12 @@ getSentTxs = atomically . readTVar =<< view wtcSentTxs_L
 -- Initialization
 ----------------------------------------------------------------------------
 
-initWalletTestContext
-    :: (HasConfiguration, HasSscConfiguration, HasNodeConfiguration)
+initWalletTestContext ::
+       ( HasConfiguration
+       , HasSscConfiguration
+       , HasDlgConfiguration
+       , HasNodeConfiguration
+       )
     => WalletTestParams
     -> (WalletTestContext -> Emulation a)
     -> Emulation a
@@ -189,8 +190,12 @@ initWalletTestContext WalletTestParams {..} callback =
             pure WalletTestContext {..}
         callback wtc
 
-runWalletTestMode
-    :: (HasConfiguration, HasSscConfiguration, HasNodeConfiguration)
+runWalletTestMode ::
+       ( HasConfiguration
+       , HasSscConfiguration
+       , HasDlgConfiguration
+       , HasNodeConfiguration
+       )
     => WalletTestParams
     -> WalletTestMode a
     -> IO a
@@ -209,7 +214,7 @@ type WalletProperty = PropertyM WalletTestMode
 -- | Convert 'WalletProperty' to 'Property' using given generator of
 -- 'WalletTestParams'.
 walletPropertyToProperty
-    :: (HasConfiguration, HasSscConfiguration, HasNodeConfiguration)
+    :: (HasConfiguration, HasSscConfiguration, HasDlgConfiguration, HasNodeConfiguration)
     => Gen WalletTestParams
     -> WalletProperty a
     -> Property
@@ -217,12 +222,12 @@ walletPropertyToProperty wtpGen walletProperty =
     forAll wtpGen $ \wtp ->
         monadic (ioProperty . runWalletTestMode wtp) walletProperty
 
-instance (HasConfiguration, HasSscConfiguration, HasNodeConfiguration)
+instance (HasConfiguration, HasSscConfiguration, HasDlgConfiguration, HasNodeConfiguration)
         => Testable (WalletProperty a) where
     property = walletPropertyToProperty arbitrary
 
 walletPropertySpec ::
-       (HasConfiguration, HasSscConfiguration, HasNodeConfiguration)
+       (HasConfiguration, HasSscConfiguration, HasDlgConfiguration, HasNodeConfiguration)
     => String
     -> (HasConfiguration => WalletProperty a)
     -> Spec
@@ -298,30 +303,14 @@ instance {-# OVERLAPPING #-} HasLoggerName WalletTestMode where
 instance HasConfiguration => MonadDBRead WalletTestMode where
     dbGet = DB.dbGetPureDefault
     dbIterSource = DB.dbIterSourcePureDefault
+    dbGetSerBlock = DB.dbGetSerBlockPureDefault
+    dbGetSerUndo = DB.dbGetSerUndoPureDefault
 
 instance HasConfiguration => MonadDB WalletTestMode where
     dbPut = DB.dbPutPureDefault
     dbWriteBatch = DB.dbWriteBatchPureDefault
     dbDelete = DB.dbDeletePureDefault
-
-instance HasConfiguration =>
-         MonadBlockDBGeneric BlockHeader Block Undo WalletTestMode
-  where
-    dbGetBlock = DB.dbGetBlockPureDefault
-    dbGetUndo = DB.dbGetUndoPureDefault
-    dbGetHeader = DB.dbGetHeaderPureDefault
-
-instance HasConfiguration => MonadBlockDBGeneric (Some IsHeader) SscBlock () WalletTestMode
-  where
-    dbGetBlock = DB.dbGetBlockSscPureDefault
-    dbGetUndo = DB.dbGetUndoSscPureDefault
-    dbGetHeader = DB.dbGetHeaderSscPureDefault
-
-instance
-    HasConfiguration =>
-    MonadBlockDBGenericWrite BlockHeader Block Undo WalletTestMode
-  where
-    dbPutBlund = DB.dbPutBlundPureDefault
+    dbPutSerBlund = DB.dbPutSerBlundPureDefault
 
 instance HasConfiguration => MonadGState WalletTestMode where
     gsAdoptedBVData = gsAdoptedBVDataDefault

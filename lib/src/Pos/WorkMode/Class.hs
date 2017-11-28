@@ -26,10 +26,10 @@ import           Pos.Context (BlockRetrievalQueue, BlockRetrievalQueueTag, HasSs
                               MonadLastKnownHeader, MonadProgressHeader, MonadRecoveryHeader,
                               StartTime, TxpGlobalSettings)
 import           Pos.Core (HasConfiguration, HasPrimaryKey)
-import           Pos.DB.Block (MonadBlockDBWrite, MonadSscBlockDB)
 import           Pos.DB.Class (MonadDB, MonadGState)
 import           Pos.DB.Rocks (MonadRealDB)
 import           Pos.Delegation.Class (MonadDelegation)
+import           Pos.Delegation.Configuration (HasDlgConfiguration)
 import           Pos.DHT.Real.Types (KademliaDHTInstance)
 import           Pos.Infra.Configuration (HasInfraConfiguration)
 import           Pos.KnownPeers (MonadFormatPeers, MonadKnownPeers)
@@ -61,8 +61,6 @@ type WorkMode ctx m
       , MonadRealDB ctx m
       , MonadGState m
       , MonadTxpLocal m
-      , MonadSscBlockDB m
-      , MonadBlockDBWrite m
       , MonadTxpMem (MempoolExt m) ctx m
       , MonadDelegation ctx m
       , MonadSscMem ctx m
@@ -93,6 +91,7 @@ type WorkMode ctx m
       , HasSlogGState ctx
       , HasNodeType ctx
       , HasSscConfiguration
+      , HasDlgConfiguration
       )
 
 -- | More relaxed version of 'WorkMode'.

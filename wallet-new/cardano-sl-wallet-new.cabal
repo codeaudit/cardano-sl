@@ -29,6 +29,7 @@ library
                        Cardano.Wallet.API.V1.Accounts
                        Cardano.Wallet.API.V1.Transactions
                        Cardano.Wallet.API.V1.Settings
+                       Cardano.Wallet.API.V1.Swagger
                        Cardano.Wallet.API.V1.Info
                        Cardano.Wallet.API.V1.Wallets
                        Cardano.Wallet.API.V1.Errors
@@ -42,6 +43,7 @@ library
   build-depends:       base
                      , QuickCheck
                      , aeson
+                     , aeson-pretty
                      , bytestring
                      , containers
                      , data-default
@@ -52,14 +54,19 @@ library
                      , http-client
                      , http-types
                      , json-sop
+                     , insert-ordered-containers
                      , lens
                      , memory
                      , mtl
+                     , neat-interpolation
                      , network-uri
                      , node-sketch
                      , servant
                      , servant-client
                      , servant-server
+                     , servant-swagger
+                     , string-conv
+                     , swagger2
                      , template-haskell
                      , text
                      , text-format
@@ -109,7 +116,6 @@ executable wallet-new-server
                        Cardano.Wallet.API.V1.Handlers.Info
                        Cardano.Wallet.API.V1.Handlers.Wallets
                        Cardano.Wallet.API.V1.Handlers.Updates
-                       Cardano.Wallet.API.V1.Swagger
                        Cardano.Wallet.Server
                        Cardano.Wallet.Server.CLI
                        Cardano.Wallet.Server.Plugins
@@ -139,7 +145,6 @@ executable wallet-new-server
                      , lens
                      , log-warper
                      , mtl
-                     , neat-interpolation
                      , node-sketch
                      , optparse-applicative
                      , servant

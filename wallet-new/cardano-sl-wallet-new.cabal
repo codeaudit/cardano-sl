@@ -12,6 +12,12 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 
+Flag exclude-aux
+  default:     False
+  manual:      True
+
+  description: Build a reduced set of components
+
 library
   hs-source-dirs:      src
   exposed-modules:     Cardano.Wallet.Orphans
@@ -182,6 +188,44 @@ executable wallet-new-server
                       RecordWildCards
                       ScopedTypeVariables
                       UndecidableInstances
+
+executable wallet-new-swagger
+  hs-source-dirs:      spec
+  main-is:             Main.hs
+  other-modules:       SwaggerGenOptions
+  build-depends:       base
+                     , aeson-pretty
+                     , bytestring
+                     , cardano-sl-wallet-new
+                     , optparse-applicative
+                     , universum
+                     , cardano-sl
+  default-language:    Haskell2010
+  ghc-options:         -threaded -rtsopts
+                       -Wall
+                       -fno-warn-orphans
+                       -O2
+
+  -- linker speed up for linux
+  if os(linux)
+    ghc-options:       -optl-fuse-ld=gold
+    ld-options:        -fuse-ld=gold
+
+  default-extensions:   FlexibleContexts
+                        FlexibleInstances
+                        NoImplicitPrelude
+                        OverloadedStrings
+                        RecordWildCards
+                        TypeApplications
+                        TypeOperators
+
+  build-tools: cpphs >= 1.19
+  ghc-options: -pgmP cpphs -optP --cpp
+
+  if flag(exclude-aux)
+    buildable: False
+  else
+    buildable: True
 
 test-suite wallet-new-specs
   ghc-options:      -Wall

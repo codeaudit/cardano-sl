@@ -154,6 +154,10 @@ extra-deps:
 - megaparsec-6.2.0
 - parser-combinators-0.2.0
 - loc-0.1.3.1
+# hscolour-1.24.1 is the version from the LTS we use (9.1)
+# we specify it explicity here, because stack2nix build uses different one
+# (and that one is broken)
+- hscolour-1.24.1
 
 # This is for CI to pass --fast to all dependencies
 apply-ghc-options: everything
